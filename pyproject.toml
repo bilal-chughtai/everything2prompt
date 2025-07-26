@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "everything2p"
+version = "0.1.0"
+description = "Turn any data source into a prompt."
+authors = ["Bilal Chughtai <brchughtaii@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pyyaml = "^6.0.2"
+pydantic = "^2.11.7"
+jinja2 = "^3.1.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
