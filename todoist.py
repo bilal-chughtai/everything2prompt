@@ -10,18 +10,14 @@ from jinja2 import Template
 # Jinja template for formatting Todoist tasks
 TODOIST_PROMPT_TEMPLATE = """{% for task in tasks %}
 ---
-
 Task: {{ task.name }}
-Priority: {{ task.priority }}
-Tags: {{ task.tags | join(', ') if task.tags else 'No tags' }}
-Description: {{ task.description if task.description else 'No description' }}
-Due: {{ task.due.strftime('%Y-%m-%d') if task.due else 'No due date' }}
-Deadline: {{ task.deadline.strftime('%Y-%m-%d') if task.deadline else 'No deadline' }}
-Completed: {{ task.completed_at.strftime('%Y-%m-%d') if task.completed_at else 'Not completed' }}
-Created: {{ task.created_at.strftime('%Y-%m-%d') if task.created_at else 'No creation date' }}
-Updated: {{ task.updated_at.strftime('%Y-%m-%d') if task.updated_at else 'No update date' }}
-
-{% endfor %}
+Priority: {{ task.priority }}{% if task.tags %}
+Tags: {{ task.tags | join(', ') }}{% endif %}{% if task.description %}
+Description: {{ task.description }}{% endif %}{% if task.due %}
+Due: {{ task.due.strftime('%Y-%m-%d') }}{% endif %}{% if task.deadline %}
+Deadline: {{ task.deadline.strftime('%Y-%m-%d') }}{% endif %}{% if task.completed_at %}
+Completed: {{ task.completed_at.strftime('%Y-%m-%d') }}{% endif %}{% if task.created_at %}
+Updated: {{ task.updated_at.strftime('%Y-%m-%d') }}{% endif %}{% endfor %}
 """
 
 

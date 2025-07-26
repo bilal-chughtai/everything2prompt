@@ -12,15 +12,10 @@ OBSIDIAN_PATH = "/Users/bilal/obsidian/bilal-obsidian"
 # Jinja template for formatting Obsidian notes
 OBSIDIAN_PROMPT_TEMPLATE = """{% for note in notes %}
 ---
-
-Note: {{ note.name }}
-Tags: {{ note.tags | join(', ') if note.tags else 'No tags' }}
-Date: {{ note.date.strftime('%Y-%m-%d') if note.date else 'No date' }}
-Content:
-
-{{ note.markdown_content }}
-
-{% endfor %}
+Note: {{ note.name }}{% if note.tags %}
+Tags: {{ note.tags | join(', ') }}{% endif %}{% if note.date %}
+Date: {{ note.date.strftime('%Y-%m-%d') }}{% endif %}
+Content: {{ note.markdown_content }}{% endfor %}
 """
 
 
@@ -168,6 +163,20 @@ def is_date_none(node: ObsidianNode) -> bool:
     return node.date is None
 
 
+def filter_obsidian_nodes(nodes: list[ObsidianNode]) -> list[ObsidianNode]:
+    """
+    Filter out template files and nodes with no date.
+    """
+    filtered_nodes = []
+    for node in nodes:
+        if is_template_file(node):
+            continue
+        if is_date_none(node):
+            continue
+        filtered_nodes.append(node)
+    return filtered_nodes
+
+
 def get_all_nodes(path: str) -> list[ObsidianNode]:
     """
     Get all obsidian files in the given path.
@@ -186,7 +195,7 @@ def get_all_nodes(path: str) -> list[ObsidianNode]:
                     print(f"Error processing {file_path}: {e}")
                     continue
 
-    return obsidian_nodes
+    return filter_obsidian_nodes(obsidian_nodes)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ from pathlib import Path
 from models import Cache
 import obsidian
 import todoist
+import instapaper
+import cal as calendar
 
 
 # Global variable for cache file path
@@ -134,6 +136,28 @@ def update_todoist_cache(cache: Cache, days_back: int = 7) -> Cache:
     return cache
 
 
+def update_instapaper_cache(cache: Cache) -> Cache:
+    """
+    Update the Instapaper articles in the cache.
+    """
+    print("Updating Instapaper cache...")
+    instapaper_articles = instapaper.get_all_articles()
+    cache.instapaper_articles = instapaper_articles
+    print(f"Updated {len(instapaper_articles)} Instapaper articles")
+    return cache
+
+
+def update_calendar_cache(cache: Cache) -> Cache:
+    """
+    Update the calendar events in the cache.
+    """
+    print("Updating Calendar cache...")
+    calendar_events = calendar.get_all_events()
+    cache.calendar_events = calendar_events
+    print(f"Updated {len(calendar_events)} Calendar events")
+    return cache
+
+
 def save_cache(cache: Cache) -> None:
     """
     Save cache to the global cache file path.
@@ -166,6 +190,10 @@ def update_cache_for_sources(sources: list[str], days_back: int = 7) -> None:
             cache = update_obsidian_cache(cache)
         elif source.lower() == "todoist":
             cache = update_todoist_cache(cache, days_back)
+        elif source.lower() == "instapaper":
+            cache = update_instapaper_cache(cache)
+        elif source.lower() == "calendar":
+            cache = update_calendar_cache(cache)
         else:
             print(f"Unknown data source: {source}")
 

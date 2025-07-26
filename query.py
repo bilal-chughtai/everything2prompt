@@ -1,6 +1,8 @@
-from models import ObsidianNode, TodoistNode, Cache
+from models import ObsidianNode, TodoistNode, InstapaperNode, CalendarNode, Cache
 from obsidian import create_obsidian_prompt
 from todoist import create_todoist_prompt
+from instapaper import create_instapaper_prompt
+from cal import create_calendar_prompt
 from cache import load_cache
 from typing import Callable
 from datetime import datetime
@@ -11,15 +13,24 @@ import re
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
 
+{% if obsidian_output %}
 *** OBSIDIAN NOTES ***
-
 {{ obsidian_output }}
-
+{% endif %}
+{% if todoist_output %}
 *** TODOIST TASKS ***
-
 {{ todoist_output }}
+{% endif %}
+{% if instapaper_output %}
+*** INSTAPAPER ARTICLES ***
+{{ instapaper_output }}
+{% endif %}
+{% if calendar_output %}
+*** CALENDAR EVENTS ***
+{{ calendar_output }}
+{% endif %}
 
-{% if not obsidian_output %}
+{% if not obsidian_output and not todoist_output and not instapaper_output and not calendar_output %}
 No results found for the given query.
 {% endif %}
 """
@@ -27,7 +38,8 @@ No results found for the given query.
 
 class Query(BaseModel):
     source: list[str] | None = Field(
-        default=None, description="Sources of the data (e.g., ['obsidian', 'todoist'])"
+        default=None,
+        description="Sources of the data (e.g., ['obsidian', 'todoist', 'calendar'])",
     )
     tag: list[str] | None = Field(default=None, description="Tags to filter by")
     from_date: datetime | None = Field(
@@ -40,7 +52,7 @@ class Query(BaseModel):
     def validate_source(cls, v):
         if v is None:
             return v
-        valid_sources = ["obsidian", "todoist"]
+        valid_sources = ["obsidian", "todoist", "instapaper", "calendar"]
         for source in v:
             if source not in valid_sources:
                 raise ValueError(f"Source must be one of {valid_sources}")
@@ -92,26 +104,35 @@ class Query(BaseModel):
                     to_date = value
 
         # Create Query object with validation
-        return cls(source=source, tag=tag, from_date=from_date, to_date=to_date)
+        query_obj = cls(source=source, tag=tag, from_date=from_date, to_date=to_date)
+
+        # If to_date is set, modify it to be 23:59:59 of that day
+        if query_obj.to_date:
+            query_obj.to_date = query_obj.to_date.replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            )
+
+        return query_obj
 
 
-def get_all_nodes() -> list[ObsidianNode | TodoistNode]:
+def get_all_nodes() -> list[ObsidianNode | TodoistNode | InstapaperNode | CalendarNode]:
     """
     Loads all the nodes from cache.
     """
     cache = load_cache()
 
-    # Concatenate obsidian nodes and todoist nodes
+    # Concatenate all nodes from different sources
     all_nodes = []
     all_nodes.extend(cache.obsidian_notes)
     all_nodes.extend(cache.todoist_tasks)
-
+    all_nodes.extend(cache.instapaper_articles)
+    all_nodes.extend(cache.calendar_events)
     return all_nodes
 
 
 def get_query_lambdas(
     query: Query,
-) -> list[Callable[[ObsidianNode | TodoistNode], bool]]:
+) -> list[Callable[[ObsidianNode | TodoistNode | InstapaperNode | CalendarNode], bool]]:
     """
     Returns a list of lambda functions, one for each field in the query.
     """
@@ -120,7 +141,9 @@ def get_query_lambdas(
     # Source filtering lambda
     if query.source is not None:
 
-        def source_filter(node: ObsidianNode | TodoistNode) -> bool:
+        def source_filter(
+            node: ObsidianNode | TodoistNode | InstapaperNode | CalendarNode,
+        ) -> bool:
             return node.data_source in query.source
 
         lambdas.append(source_filter)
@@ -128,7 +151,9 @@ def get_query_lambdas(
     # Tag filtering lambda
     if query.tag is not None:
 
-        def tag_filter(node: ObsidianNode | TodoistNode) -> bool:
+        def tag_filter(
+            node: ObsidianNode | TodoistNode | InstapaperNode | CalendarNode,
+        ) -> bool:
             return any(tag in node.tags for tag in query.tag)
 
         lambdas.append(tag_filter)
@@ -136,7 +161,9 @@ def get_query_lambdas(
     # From date filtering lambda
     if query.from_date is not None:
 
-        def from_date_filter(node: ObsidianNode | TodoistNode) -> bool:
+        def from_date_filter(
+            node: ObsidianNode | TodoistNode | InstapaperNode | CalendarNode,
+        ) -> bool:
             return node.date is None or node.date >= query.from_date
 
         lambdas.append(from_date_filter)
@@ -144,7 +171,9 @@ def get_query_lambdas(
     # To date filtering lambda
     if query.to_date is not None:
 
-        def to_date_filter(node: ObsidianNode | TodoistNode) -> bool:
+        def to_date_filter(
+            node: ObsidianNode | TodoistNode | InstapaperNode | CalendarNode,
+        ) -> bool:
             return node.date is None or node.date <= query.to_date
 
         lambdas.append(to_date_filter)
@@ -173,13 +202,20 @@ def run(query_string: str) -> str:
     # Sort by date (most recent first)
     filtered_nodes.sort(key=lambda x: (x.date is None, x.date), reverse=True)
 
-    # Separate obsidian and todoist nodes
+    # Separate nodes by type
     obsidian_nodes = [node for node in filtered_nodes if isinstance(node, ObsidianNode)]
     todoist_nodes = [node for node in filtered_nodes if isinstance(node, TodoistNode)]
+    instapaper_nodes = [
+        node for node in filtered_nodes if isinstance(node, InstapaperNode)
+    ]
+    calendar_nodes = [node for node in filtered_nodes if isinstance(node, CalendarNode)]
 
-    # Get formatted output from obsidian only
     obsidian_output = create_obsidian_prompt(obsidian_nodes) if obsidian_nodes else ""
     todoist_output = create_todoist_prompt(todoist_nodes) if todoist_nodes else ""
+    instapaper_output = (
+        create_instapaper_prompt(instapaper_nodes) if instapaper_nodes else ""
+    )
+    calendar_output = create_calendar_prompt(calendar_nodes) if calendar_nodes else ""
 
     # Create formatted prompt using the master template
     template = Template(MASTER_PROMPT_TEMPLATE)
@@ -187,6 +223,8 @@ def run(query_string: str) -> str:
         query=query_string,
         obsidian_output=obsidian_output,
         todoist_output=todoist_output,
+        instapaper_output=instapaper_output,
+        calendar_output=calendar_output,
     )
 
     return prompt

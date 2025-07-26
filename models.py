@@ -223,6 +223,159 @@ class TodoistNode(Node):
         return list(combined_tags)
 
 
+class InstapaperNode(Node):
+    """
+    Represents an Instapaper article with all its key data.
+    """
+
+    data_source: Literal["instapaper"] = "instapaper"
+    url: str = pydantic.Field(description="URL of the article")
+    title: str = pydantic.Field(description="Title of the article")
+    folder: str = pydantic.Field(
+        description="Folder the article is in (starred/unread)"
+    )
+    is_read: bool = pydantic.Field(description="Whether the article has been read")
+    timestamp: int = pydantic.Field(
+        description="Unix timestamp when the article was saved"
+    )
+    selection: str | None = pydantic.Field(
+        default=None, description="Selected text from the article (ignored)"
+    )
+
+    def __str__(self) -> str:
+        title_preview = self.title[:30] + "..." if len(self.title) > 30 else self.title
+        return f"InstapaperNode(name='{self.name}', title='{title_preview}', url='{self.url}', is_read={self.is_read}, folder='{self.folder}')"
+
+    @classmethod
+    def from_csv_row(cls, row: dict) -> "InstapaperNode":
+        """
+        Create InstapaperNode from a CSV row.
+        """
+        # Parse tags from the tags field (assuming it's a string representation of a list)
+        tags_str = row.get("Tags", "[]")
+        try:
+            # Remove brackets and split by comma, then strip whitespace
+            tags = [
+                tag.strip().strip("\"'")
+                for tag in tags_str.strip("[]").split(",")
+                if tag.strip()
+            ]
+        except:
+            tags = []
+
+        # Determine if the article is read based on folder
+        folder = row.get("Folder", "").lower()
+        is_read = folder == "starred"
+
+        # Convert timestamp to datetime
+        timestamp = int(row.get("Timestamp", 0))
+        date = datetime.datetime.fromtimestamp(timestamp) if timestamp > 0 else None
+
+        return cls(
+            name=row.get("Title", ""),  # Use title as the name
+            url=row.get("URL", ""),
+            title=row.get("Title", ""),
+            folder=row.get("Folder", ""),
+            is_read=is_read,
+            timestamp=timestamp,
+            date=date,
+            tags=tags,
+            selection=row.get("Selection", None),
+        )
+
+
+class CalendarNode(Node):
+    """
+    Represents a calendar event with all its key data.
+    """
+
+    data_source: Literal["calendar"] = "calendar"
+    event_id: str = pydantic.Field(
+        description="Unique identifier for the calendar event"
+    )
+    description: str | None = pydantic.Field(
+        default=None, description="Description of the event"
+    )
+    location: str | None = pydantic.Field(
+        default=None, description="Location of the event"
+    )
+    start_time: datetime.datetime = pydantic.Field(
+        description="Start time of the event"
+    )
+    end_time: datetime.datetime | None = pydantic.Field(
+        default=None, description="End time of the event"
+    )
+    organizer: str | None = pydantic.Field(
+        default=None, description="Organizer of the event"
+    )
+    status: str | None = pydantic.Field(
+        default=None, description="Status of the event (CONFIRMED, TENTATIVE, etc.)"
+    )
+    created_at: datetime.datetime | None = pydantic.Field(
+        default=None, description="When the event was created"
+    )
+    last_modified: datetime.datetime | None = pydantic.Field(
+        default=None, description="When the event was last modified"
+    )
+
+    def __str__(self) -> str:
+        name_preview = self.name[:30] + "..." if len(self.name) > 30 else self.name
+        return f"CalendarNode(name='{name_preview}', start_time={self.start_time}, end_time={self.end_time})"
+
+    @classmethod
+    def from_ical_event(cls, event) -> "CalendarNode":
+        """
+        Create CalendarNode from an iCalendar event.
+        """
+        # Extract basic event data
+        summary = str(event.get("summary", "")) if event.get("summary") else ""
+        description = (
+            str(event.get("description", "")) if event.get("description") else None
+        )
+        location = str(event.get("location", "")) if event.get("location") else None
+        organizer = str(event.get("organizer", "")) if event.get("organizer") else None
+        status = str(event.get("status", "")) if event.get("status") else None
+
+        # Extract dates
+        start_time = event.get("dtstart")
+        end_time = event.get("dtend")
+        created_at = event.get("created")
+        last_modified = event.get("last-modified")
+
+        # Convert to datetime objects and strip timezone
+        start_dt = strip_timezone(start_time.dt if start_time else None)
+        end_dt = strip_timezone(end_time.dt if end_time else None)
+        created_dt = strip_timezone(created_at.dt if created_at else None)
+        modified_dt = strip_timezone(last_modified.dt if last_modified else None)
+
+        # Use start time as the canonical date
+        date = start_dt
+
+        # Generate tags from event properties
+        tags = []
+        if location:
+            tags.append("location")
+        if organizer:
+            tags.append("organized")
+        if status:
+            tags.append(status.lower())
+
+        return cls(
+            name=summary,  # Use summary as the name
+            event_id=str(event.get("uid", "")) if event.get("uid") else "",
+            description=description,
+            location=location,
+            start_time=start_dt,
+            end_time=end_dt,
+            organizer=organizer,
+            status=status,
+            created_at=created_dt,
+            last_modified=modified_dt,
+            date=date,
+            tags=tags,
+        )
+
+
 class Cache(pydantic.BaseModel):
     """
     All the data.
@@ -236,6 +389,12 @@ class Cache(pydantic.BaseModel):
     )
     obsidian_notes: list[ObsidianNode] = pydantic.Field(
         default_factory=list, description="Notes of the TodoistNode."
+    )
+    instapaper_articles: list[InstapaperNode] = pydantic.Field(
+        default_factory=list, description="Articles from Instapaper."
+    )
+    calendar_events: list[CalendarNode] = pydantic.Field(
+        default_factory=list, description="Events from Calendar."
     )
 
     @classmethod
