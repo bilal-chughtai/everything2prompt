@@ -10,9 +10,7 @@ from models import ObsidianNode
 OBSIDIAN_PATH = "/Users/bilal/obsidian/bilal-obsidian"
 
 # Jinja template for formatting Obsidian notes
-OBSIDIAN_PROMPT_TEMPLATE = """
-*** OBSIDIAN NOTES ***
-{% for note in notes %}
+OBSIDIAN_PROMPT_TEMPLATE = """{% for note in notes %}
 ---
 
 Note: {{ note.name }}

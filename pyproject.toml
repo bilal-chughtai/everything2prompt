@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "everything2p"
+name = "everything2prompt"
 version = "0.1.0"
 description = "Turn any data source into a prompt."
 authors = ["Bilal Chughtai <brchughtaii@gmail.com>"]
@@ -10,7 +10,12 @@ python = "^3.11"
 pyyaml = "^6.0.2"
 pydantic = "^2.11.7"
 jinja2 = "^3.1.6"
+todoist-api-python = "^3.1.0"
+dotenv = "^0.9.9"
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.30.0"
 
 [build-system]
 requires = ["poetry-core"]
