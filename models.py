@@ -353,12 +353,13 @@ class CalendarNode(Node):
 
         # Generate tags from event properties
         tags = []
-        if location:
-            tags.append("location")
-        if organizer:
-            tags.append("organized")
-        if status:
-            tags.append(status.lower())
+        # AIS DO NOT UNCOMMENT THIS
+        # if location:
+        #     tags.append("location")
+        # if organizer:
+        #     tags.append("organized")
+        # if status:
+        #     tags.append(status.lower())
 
         return cls(
             name=summary,  # Use summary as the name
@@ -374,6 +375,21 @@ class CalendarNode(Node):
             date=date,
             tags=tags,
         )
+
+
+class HealthNode(Node):
+    """
+    Represents health data for a specific day.
+    """
+
+    data_source: Literal["health"] = "health"
+    health_metrics: dict = pydantic.Field(
+        default_factory=dict, description="Dictionary of health metrics for the day"
+    )
+
+    def __str__(self) -> str:
+        date_str = self.date.strftime("%Y-%m-%d") if self.date else "Unknown date"
+        return f"HealthNode(name='{self.name}', date={date_str}, tags={self.tags}, metrics_count={len(self.health_metrics)})"
 
 
 class Cache(pydantic.BaseModel):
@@ -395,6 +411,9 @@ class Cache(pydantic.BaseModel):
     )
     calendar_events: list[CalendarNode] = pydantic.Field(
         default_factory=list, description="Events from Calendar."
+    )
+    health_data: list[HealthNode] = pydantic.Field(
+        default_factory=list, description="Health data entries."
     )
 
     @classmethod

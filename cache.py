@@ -8,6 +8,7 @@ import obsidian
 import todoist
 import instapaper
 import cal as calendar
+import health
 
 
 # Global variable for cache file path
@@ -158,6 +159,17 @@ def update_calendar_cache(cache: Cache) -> Cache:
     return cache
 
 
+def update_health_cache(cache: Cache) -> Cache:
+    """
+    Update the health data in the cache.
+    """
+    print("Updating Health cache...")
+    health_data = health.get_all_health_data()
+    cache.health_data = health_data
+    print(f"Updated {len(health_data)} Health data entries")
+    return cache
+
+
 def save_cache(cache: Cache) -> None:
     """
     Save cache to the global cache file path.
@@ -194,6 +206,8 @@ def update_cache_for_sources(sources: list[str], days_back: int = 7) -> None:
             cache = update_instapaper_cache(cache)
         elif source.lower() == "calendar":
             cache = update_calendar_cache(cache)
+        elif source.lower() == "health":
+            cache = update_health_cache(cache)
         else:
             print(f"Unknown data source: {source}")
 
@@ -220,7 +234,6 @@ def main():
         default=7,
         help="Number of days back to fetch completed tasks from Todoist API (default: 7)",
     )
-
     args = parser.parse_args()
     with CacheLock():
         print(f"Updating cache for sources: {args.sources}")
