@@ -15,6 +15,7 @@ dotenv = "^0.9.9"
 icalendar = "^6.3.1"
 requests = "^2.31.0"
 mcp = {extras = ["cli"], version = "^1.2.0"}
+requests-oauthlib = "^2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
