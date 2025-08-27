@@ -14,6 +14,7 @@ TAG_DESCRIPTIONS = {
         "other": "Miscellaneous articles that don't fit other categories",
         "optimisation": "Articles about productivity, efficiency, and optimization",
         "people": "Articles about people, biographies, and human stories",
+        "relationships": "Thoughts about relationships.",
         "health": "Health, fitness, and wellness articles",
         "careers": "Career development, job hunting, and professional growth",
         "research": "Research papers, academic articles, and scientific studies",

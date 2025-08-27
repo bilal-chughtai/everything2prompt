@@ -163,6 +163,16 @@ def is_date_none(node: ObsidianNode) -> bool:
     return node.date is None
 
 
+def filter_sensitive_stuff_for_demo(node: ObsidianNode) -> bool:
+    """
+    Filter out sensitive stuff for demo.
+    """
+    out = "relationships" in node.tags
+    if out:
+        print(f"Filtering out {node.name} because {out}")
+    return out
+
+
 def filter_obsidian_nodes(nodes: list[ObsidianNode]) -> list[ObsidianNode]:
     """
     Filter out template files and nodes with no date.
@@ -173,6 +183,8 @@ def filter_obsidian_nodes(nodes: list[ObsidianNode]) -> list[ObsidianNode]:
             continue
         if is_date_none(node):
             continue
+        # if filter_sensitive_stuff_for_demo(node):
+        #     continue
         filtered_nodes.append(node)
     return filtered_nodes
 

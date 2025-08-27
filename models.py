@@ -317,6 +317,9 @@ class CalendarNode(Node):
     last_modified: datetime.datetime | None = pydantic.Field(
         default=None, description="When the event was last modified"
     )
+    calendar_name: str | None = pydantic.Field(
+        default=None, description="Name of the calendar this event belongs to"
+    )
 
     def __str__(self) -> str:
         name_preview = self.name[:30] + "..." if len(self.name) > 30 else self.name

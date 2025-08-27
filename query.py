@@ -22,32 +22,25 @@ import functools
 
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
-
 {% if obsidian_output %}
 *** OBSIDIAN NOTES ***
 {{ obsidian_output }}
-{% endif %}
-{% if todoist_output %}
+{% endif %}{% if todoist_output %}
 *** TODOIST TASKS ***
 {{ todoist_output }}
-{% endif %}
-{% if instapaper_output %}
+{% endif %}{% if instapaper_output %}
 *** INSTAPAPER ARTICLES ***
 {{ instapaper_output }}
-{% endif %}
-{% if calendar_output %}
+{% endif %}{% if calendar_output %}
 *** CALENDAR EVENTS ***
 {{ calendar_output }}
-{% endif %}
-{% if health_output %}
+{% endif %}{% if health_output %}
 *** HEALTH DATA ***
 {{ health_output }}
 {% endif %}
-
 {% if not obsidian_output and not todoist_output and not instapaper_output and not calendar_output and not health_output %}
 No results found for the given query.
-{% endif %}
-"""
+{% endif %}"""
 
 
 class Query(BaseModel):
