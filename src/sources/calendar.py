@@ -1,8 +1,13 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 import requests
 import os
 from typing import List, Dict
 from icalendar import Calendar
-from models import CalendarNode
+from src.models import CalendarNode
 from dotenv import load_dotenv
 from jinja2 import Template
 
@@ -22,8 +27,17 @@ for key, value in os.environ.items():
 if not CALENDAR_URLS and os.getenv("SECRET_GCAL_ICAL"):
     CALENDAR_URLS["default"] = os.getenv("SECRET_GCAL_ICAL")
 
-CALENDAR_PROMPT_TEMPLATE = """{% for event in events %}
----
+CALENDAR_PROMPT_TEMPLATE = """*** Calendar Events ***
+Event = event title/subject
+Description = detailed event description
+Location = venue/meeting location
+Date = event date
+Start Time = event start time
+End Time = event end time
+Organizer = event organizer/creator
+Calendar = source calendar category
+{% for event in events %}
+--- Event {{ loop.index }} ---
 Event: {{ event.name }}{% if event.description %}
 Description: {{ event.description }}{% endif %}{% if event.location %}
 Location: {{ event.location }}{% endif %}{% if event.start_time %}

@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 import csv
 import os
 from datetime import datetime
@@ -5,7 +10,7 @@ from pathlib import Path
 from typing import List
 from jinja2 import Template
 from dotenv import load_dotenv
-from models import HealthNode
+from src.models import HealthNode
 
 # Load environment variables
 load_dotenv()
@@ -13,7 +18,8 @@ load_dotenv()
 # Get health CSV path from environment variable
 HEALTH_CSV_PATH = os.getenv("HEALTH_CSV_PATH")
 
-HEALTH_PROMPT_TEMPLATE = """{% for entry in entries %}---
+HEALTH_PROMPT_TEMPLATE = """*** Health Data ***
+{% for entry in entries %}--- Entry {{ loop.index }} ---
 Date: {{ entry.date.strftime('%Y-%m-%d') }}{% for key, value in entry.health_metrics.items() %}
 {{ key.replace('__', ' - ').replace('_', ' ').title() }}: {% if value is number %}{{ "%.2f"|format(value) }}{% else %}{{ value }}{% endif %}{% endfor %}
 {% endfor %}

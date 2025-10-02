@@ -1,7 +1,6 @@
 import datetime
 import pydantic
 from typing import Literal
-from todoist_api_python.models import Task
 
 
 def strip_timezone(
@@ -70,13 +69,6 @@ class TodoistProject(pydantic.BaseModel):
     )
     name: str = pydantic.Field(description="Name of the project.")
 
-    @classmethod
-    def from_api_response(cls, response) -> "TodoistProject":
-        return cls(
-            name=response.name,  # Set the name field
-            project_id=response.id,
-        )
-
 
 class TodoistNode(Node):
     """
@@ -121,107 +113,6 @@ class TodoistNode(Node):
         )
         return f"TodoistNode(name='{self.name}', task_id='{self.task_id}', content='{content_preview}', priority={self.priority}, due={self.due})"
 
-    @classmethod
-    def from_api_response(
-        cls, task: Task, projects: list[TodoistProject]
-    ) -> "TodoistNode":
-        return cls(
-            name=task.content,  # Use content as the name
-            task_id=task.id,
-            content=task.content,
-            description=task.description,
-            project_id=task.project_id,
-            parent_id=task.parent_id,
-            labels=task.labels,
-            priority=task.priority,
-            due=strip_timezone(task.due.date if task.due else None),
-            deadline=strip_timezone(task.deadline),
-            completed_at=strip_timezone(task.completed_at),
-            created_at=strip_timezone(task.created_at),
-            updated_at=strip_timezone(task.updated_at),
-            date=strip_timezone(cls.get_canonical_date(task)),
-            tags=cls.get_union_of_labels_and_project(task, projects),
-        )
-
-    @staticmethod
-    def get_union_of_labels_and_project(
-        task: Task, projects: list[TodoistProject]
-    ) -> list[str]:
-        """
-        Get the union of the labels and the project name.
-        """
-        # For now, just return labels since we don't have project name
-        # You'll need to pass project info separately or fetch it
-        project_name = TodoistNode.get_project_name(task, projects)
-        return task.labels + [project_name] if project_name else task.labels
-
-    @staticmethod
-    def get_canonical_date(task: Task) -> datetime.datetime | None:
-        """
-        Get the canonical date of the task.
-        """
-        if task.completed_at:
-            return strip_timezone(task.completed_at)
-        if task.due:
-            return strip_timezone(task.due.date)
-        if task.deadline:
-            return strip_timezone(task.deadline)
-        if task.updated_at:
-            return strip_timezone(task.updated_at)
-        # if no date return None
-        return None
-
-    @staticmethod
-    def get_project_name(task: Task, projects: list[TodoistProject]) -> str | None:
-        """
-        Get the project name of the task.
-        """
-        return next(
-            (
-                project.name
-                for project in projects
-                if project.project_id == task.project_id
-            ),
-            None,
-        )
-
-    @classmethod
-    def from_api_response_with_project(
-        cls, task: Task, project: TodoistProject
-    ) -> "TodoistNode":
-        """
-        Create TodoistNode from task with project information for proper tag generation.
-        """
-        return cls(
-            name=task.content,  # Use content as the name
-            task_id=task.id,
-            content=task.content,
-            description=task.description,
-            project_id=task.project_id,
-            parent_id=task.parent_id,
-            labels=task.labels,
-            priority=task.priority,
-            due=strip_timezone(task.due),
-            deadline=strip_timezone(task.deadline),
-            completed_at=strip_timezone(task.completed_at),
-            created_at=strip_timezone(task.created_at),
-            updated_at=strip_timezone(task.updated_at),
-            date=strip_timezone(cls.get_canonical_date(task)),
-            tags=cls.get_union_of_labels_and_project_with_project(task, project),
-        )
-
-    @staticmethod
-    def get_union_of_labels_and_project_with_project(
-        task: Task, project: TodoistProject
-    ) -> list[str]:
-        """
-        Get the union of the labels and the project name.
-        """
-        combined_tags = set(task.labels)
-        if project and project.name:
-            combined_tags.add(project.name)
-        return list(combined_tags)
-
 
 class InstapaperNode(Node):
     """
@@ -245,43 +136,6 @@ class InstapaperNode(Node):
     def __str__(self) -> str:
         title_preview = self.title[:30] + "..." if len(self.title) > 30 else self.title
         return f"InstapaperNode(name='{self.name}', title='{title_preview}', url='{self.url}', is_read={self.is_read}, folder='{self.folder}')"
-
-    @classmethod
-    def from_csv_row(cls, row: dict) -> "InstapaperNode":
-        """
-        Create InstapaperNode from a CSV row.
-        """
-        # Parse tags from the tags field (assuming it's a string representation of a list)
-        tags_str = row.get("Tags", "[]")
-        try:
-            # Remove brackets and split by comma, then strip whitespace
-            tags = [
-                tag.strip().strip("\"'")
-                for tag in tags_str.strip("[]").split(",")
-                if tag.strip()
-            ]
-        except:
-            tags = []
-
-        # Determine if the article is read based on folder
-        folder = row.get("Folder", "").lower()
-        is_read = folder == "starred"
-
-        # Convert timestamp to datetime
-        timestamp = int(row.get("Timestamp", 0))
-        date = datetime.datetime.fromtimestamp(timestamp) if timestamp > 0 else None
-
-        return cls(
-            name=row.get("Title", ""),  # Use title as the name
-            url=row.get("URL", ""),
-            title=row.get("Title", ""),
-            folder=row.get("Folder", ""),
-            is_read=is_read,
-            timestamp=timestamp,
-            date=date,
-            tags=tags,
-            selection=row.get("Selection", None),
-        )
 
 
 class CalendarNode(Node):

@@ -1,8 +1,13 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 import requests
 import os
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from models import InstapaperNode
+from src.models import InstapaperNode
 from jinja2 import Template
 from requests_oauthlib import OAuth1Session
 import urllib.parse
@@ -20,12 +25,19 @@ ACCESS_TOKEN = os.getenv("INSTAPAPER_ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.getenv("INSTAPAPER_ACCESS_TOKEN_SECRET")
 
 # Jinja template for formatting Instapaper articles
-INSTAPAPER_PROMPT_TEMPLATE = """{% for article in articles %}
----
+INSTAPAPER_PROMPT_TEMPLATE = """*** Instapaper Articles ***
+Title = article headline/title
+URL = web page URL
+Tags = user-applied tags for organization
+Date = date saved to Instapaper (none if no date available). importantly, not the date of reading.
+Read = true=marked as read, false=unread
+{% for article in articles %}
+--- Article {{ loop.index }} ---
 Title: {{ article.title }}
 URL: {{ article.url }}{% if article.tags %}
 Tags: {{ article.tags | join(', ') }}{% endif %}{% if article.date %}
-Date: {{ article.date.strftime('%Y-%m-%d') }}{% endif %}
+Date: {{ article.date.strftime('%Y-%m-%d') }}{% else %}
+Date: none{% endif %}
 Read: {{ article.is_read }}{% endfor %}
 """
 
@@ -222,6 +234,51 @@ def create_instapaper_prompt(articles: List[InstapaperNode]) -> str:
     return template.render(articles=articles)
 
 
+def create_instapaper_node_from_csv_row(row: dict) -> InstapaperNode:
+    """
+    Create InstapaperNode from a CSV row.
+    """
+    # Parse tags from the tags field (assuming it's a string representation of a list)
+    tags_str = row.get("Tags", "[]")
+    try:
+        # Remove brackets and split by comma, then strip whitespace
+        tags = [
+            tag.strip().strip("\"'")
+            for tag in tags_str.strip("[]").split(",")
+            if tag.strip()
+        ]
+    except:
+        tags = []
+
+    # Determine if the article is read based on folder
+    folder = row.get("Folder", "").lower()
+    is_read = folder == "starred"
+
+    # Convert timestamp to datetime
+    timestamp_str = row.get("Timestamp", "")
+    date = None
+    if timestamp_str:
+        try:
+            timestamp = int(timestamp_str)
+            if timestamp > 0:
+                date = datetime.fromtimestamp(timestamp)
+        except (ValueError, TypeError):
+            # Invalid timestamp, date remains None
+            pass
+
+    return InstapaperNode(
+        name=row.get("Title", ""),  # Use title as the name
+        url=row.get("URL", ""),
+        title=row.get("Title", ""),
+        folder=row.get("Folder", ""),
+        is_read=is_read,
+        timestamp=timestamp,
+        date=date,
+        tags=tags,
+        selection=row.get("Selection", None),
+    )
+
+
 def bookmark_to_instapaper_node(bookmark: Dict[str, Any]) -> InstapaperNode:
     """
     Convert a bookmark dictionary from the API to an InstapaperNode.
@@ -239,16 +296,16 @@ def bookmark_to_instapaper_node(bookmark: Dict[str, Any]) -> InstapaperNode:
 
     # Get timestamp (required field)
     timestamp = bookmark.get("time", 0)
-    if not timestamp:
-        # If no timestamp, use current time as fallback
-        timestamp = int(datetime.now().timestamp())
 
-    # Parse date from timestamp
+    # Parse date from timestamp only if timestamp exists
     date = None
-    try:
-        date = datetime.fromtimestamp(timestamp)
-    except (ValueError, TypeError):
-        date = datetime.now()
+    if timestamp:
+        try:
+            timestamp = int(timestamp)
+            date = datetime.fromtimestamp(timestamp)
+        except (ValueError, TypeError):
+            date = None  # Invalid timestamp, set to None
+    # If no timestamp, date remains None
 
     # Determine if read based on whether it's in the archive folder
     # The API response includes folder information

@@ -29,7 +29,7 @@ echo "Running cache update at $(date)"
 update_sources() {
     local sources=("$@")
     echo "Updating sources: ${sources[*]}"
-    python cache.py --sources "${sources[@]}"
+    python src/cache.py --sources "${sources[@]}"
 }
 
 # Check if it's time for frequent updates (every 5 minutes)

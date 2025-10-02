@@ -3,13 +3,14 @@ import os
 import fcntl
 import time
 from pathlib import Path
-from models import Cache
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+
+from src.models import Cache
 from dotenv import load_dotenv
-import obsidian
-import todoist
-import instapaper
-import cal as calendar
-import health
+from src.sources import obsidian, todoist, instapaper, calendar, health
 
 # Load environment variables
 load_dotenv()

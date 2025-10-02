@@ -1,7 +1,12 @@
 from typing import Any
 import logging
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+
 from mcp.server.fastmcp import FastMCP
-from query import run, get_query_help
+from src.query import run, get_query_help
 
 # Configure logging to write to stderr instead of stdout
 logging.basicConfig(

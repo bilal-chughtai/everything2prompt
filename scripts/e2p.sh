@@ -20,7 +20,7 @@ cd "$SCRIPT_DIR"
 source .venv/bin/activate
 
 # Run the query and capture output
-QUERY_OUTPUT=$(python query.py "$1" 2>&1)
+QUERY_OUTPUT=$(python src/query.py "$1" 2>&1)
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then

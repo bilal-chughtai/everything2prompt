@@ -1,4 +1,9 @@
 import os
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 import re
 import yaml
 from datetime import datetime
@@ -6,7 +11,7 @@ from pathlib import Path
 from typing import Tuple
 from jinja2 import Template
 from dotenv import load_dotenv
-from models import ObsidianNode
+from src.models import ObsidianNode
 
 # Load environment variables
 load_dotenv()
@@ -15,8 +20,13 @@ load_dotenv()
 OBSIDIAN_PATH = os.getenv("OBSIDIAN_PATH")
 
 # Jinja template for formatting Obsidian notes
-OBSIDIAN_PROMPT_TEMPLATE = """{% for note in notes %}
----
+OBSIDIAN_PROMPT_TEMPLATE = """*** Obsidian Notes ***
+Note = filename of the note
+Tags = user-defined tags from frontmatter
+Date = date file ws created
+Content = main text content of the note
+{% for note in notes %}
+--- Note {{ loop.index }} ---
 Note: {{ note.name }}{% if note.tags %}
 Tags: {{ note.tags | join(', ') }}{% endif %}{% if note.date %}
 Date: {{ note.date.strftime('%Y-%m-%d') }}{% endif %}

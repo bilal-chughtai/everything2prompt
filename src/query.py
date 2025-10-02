@@ -1,4 +1,9 @@
-from models import (
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+
+from src.models import (
     ObsidianNode,
     TodoistNode,
     InstapaperNode,
@@ -6,13 +11,13 @@ from models import (
     HealthNode,
     Cache,
 )
-from obsidian import create_obsidian_prompt
-from todoist import create_todoist_prompt
-from instapaper import create_instapaper_prompt
-from cal import create_calendar_prompt
-from health import create_health_prompt
-from cache import load_cache
-from tag_descriptions import get_source_tag_descriptions
+from src.sources.obsidian import create_obsidian_prompt
+from src.sources.todoist import create_todoist_prompt
+from src.sources.instapaper import create_instapaper_prompt
+from src.sources.calendar import create_calendar_prompt
+from src.sources.health import create_health_prompt
+from src.cache import load_cache
+from src.tag_descriptions import get_source_tag_descriptions
 from typing import Callable
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
@@ -23,19 +28,14 @@ import functools
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
 {% if obsidian_output %}
-*** OBSIDIAN NOTES ***
 {{ obsidian_output }}
 {% endif %}{% if todoist_output %}
-*** TODOIST TASKS ***
 {{ todoist_output }}
 {% endif %}{% if instapaper_output %}
-*** INSTAPAPER ARTICLES ***
 {{ instapaper_output }}
 {% endif %}{% if calendar_output %}
-*** CALENDAR EVENTS ***
 {{ calendar_output }}
 {% endif %}{% if health_output %}
-*** HEALTH DATA ***
 {{ health_output }}
 {% endif %}
 {% if not obsidian_output and not todoist_output and not instapaper_output and not calendar_output and not health_output %}
@@ -408,7 +408,9 @@ def run(query_string: str) -> str:
     obsidian_nodes = [node for node in filtered_nodes if isinstance(node, ObsidianNode)]
     todoist_nodes = [node for node in filtered_nodes if isinstance(node, TodoistNode)]
     instapaper_nodes = [
-        node for node in filtered_nodes if isinstance(node, InstapaperNode)
+        node
+        for node in filtered_nodes
+        if isinstance(node, InstapaperNode) and node.date is not None
     ]
     calendar_nodes = [node for node in filtered_nodes if isinstance(node, CalendarNode)]
     health_nodes = [node for node in filtered_nodes if isinstance(node, HealthNode)]
