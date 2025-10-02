@@ -4,16 +4,20 @@ import fcntl
 import time
 from pathlib import Path
 from models import Cache
+from dotenv import load_dotenv
 import obsidian
 import todoist
 import instapaper
 import cal as calendar
 import health
 
+# Load environment variables
+load_dotenv()
 
-# Global variable for cache file path
-CACHE_FILE_PATH = "/Users/bilal/Code/everything2prompt/cache.json"
-LOCK_FILE_PATH = "/Users/bilal/Code/everything2prompt/cache.lock"
+# Get cache and lock file paths from environment variables
+# Default to relative paths if not specified
+CACHE_FILE_PATH = os.getenv("CACHE_FILE_PATH", "cache.json")
+LOCK_FILE_PATH = os.getenv("LOCK_FILE_PATH", "cache.lock")
 
 
 class CacheLock:
@@ -88,11 +92,13 @@ def load_cache() -> Cache:
         try:
             return Cache.from_path(CACHE_FILE_PATH)
         except Exception as e:
-            print(f"Error loading cache from {CACHE_FILE_PATH}: {e}")
-            print("Creating new cache...")
+            print(f"[main] Error loading cache from {CACHE_FILE_PATH}: {e}")
+            print("[main] Creating new cache...")
             return Cache()
     else:
-        print(f"Cache file not found at {CACHE_FILE_PATH}, creating new cache...")
+        print(
+            f"[main] Cache file not found at {CACHE_FILE_PATH}, creating new cache..."
+        )
         return Cache()
 
 
@@ -100,10 +106,10 @@ def update_obsidian_cache(cache: Cache) -> Cache:
     """
     Update the obsidian notes in the cache.
     """
-    print("Updating Obsidian cache...")
+    print("[obsidian] Updating Obsidian cache...")
     obsidian_nodes = obsidian.get_all_nodes(obsidian.OBSIDIAN_PATH)
     cache.obsidian_notes = obsidian_nodes
-    print(f"Updated {len(obsidian_nodes)} Obsidian notes")
+    print(f"[obsidian] Updated {len(obsidian_nodes)} Obsidian notes")
     return cache
 
 
@@ -115,10 +121,10 @@ def update_todoist_cache(cache: Cache, days_back: int = 7) -> Cache:
         cache: The cache to update
         days_back: Number of days to look back for completed tasks (default: 7)
     """
-    print(f"Updating Todoist cache (looking back {days_back} days)...")
+    print(f"[todoist] Updating Todoist cache (looking back {days_back} days)...")
     api = todoist.get_todoist_api()
     if not api:
-        print("Failed to initialize Todoist API, skipping Todoist update")
+        print("[todoist] Failed to initialize Todoist API, skipping Todoist update")
         return cache
 
     # Get all Todoist data including completed tasks from the specified days back
@@ -129,11 +135,9 @@ def update_todoist_cache(cache: Cache, days_back: int = 7) -> Cache:
     # Combine active and completed tasks
     all_tasks = active_tasks + completed_tasks
 
-    # Update cache with new data
-    cache.todoist_tasks = todoist.update_tasks(cache.todoist_tasks, all_tasks)
-    cache.todoist_projects = todoist.update_projects(
-        cache.todoist_projects, todoist_projects
-    )
+    # Replace cache data with fresh data (no merging since we fetch fresh data)
+    cache.todoist_tasks = all_tasks
+    cache.todoist_projects = todoist_projects
     return cache
 
 
@@ -141,10 +145,10 @@ def update_instapaper_cache(cache: Cache) -> Cache:
     """
     Update the Instapaper articles in the cache.
     """
-    print("Updating Instapaper cache...")
+    print("[instapaper] Updating Instapaper cache...")
     instapaper_articles = instapaper.get_all_articles()
     cache.instapaper_articles = instapaper_articles
-    print(f"Updated {len(instapaper_articles)} Instapaper articles")
+    print(f"[instapaper] Updated {len(instapaper_articles)} Instapaper articles")
     return cache
 
 
@@ -152,10 +156,10 @@ def update_calendar_cache(cache: Cache) -> Cache:
     """
     Update the calendar events in the cache.
     """
-    print("Updating Calendar cache...")
+    print("[calendar] Updating Calendar cache...")
     calendar_events = calendar.get_all_events()
     cache.calendar_events = calendar_events
-    print(f"Updated {len(calendar_events)} Calendar events")
+    print(f"[calendar] Updated {len(calendar_events)} Calendar events")
     return cache
 
 
@@ -163,10 +167,10 @@ def update_health_cache(cache: Cache) -> Cache:
     """
     Update the health data in the cache.
     """
-    print("Updating Health cache...")
+    print("[health] Updating Health cache...")
     health_data = health.get_all_health_data()
     cache.health_data = health_data
-    print(f"Updated {len(health_data)} Health data entries")
+    print(f"[health] Updated {len(health_data)} Health data entries")
     return cache
 
 
@@ -180,9 +184,9 @@ def save_cache(cache: Cache) -> None:
 
     try:
         cache.to_path(CACHE_FILE_PATH)
-        print(f"Cache saved to {CACHE_FILE_PATH}")
+        print(f"[main] Cache saved to {CACHE_FILE_PATH}")
     except Exception as e:
-        print(f"Error saving cache to {CACHE_FILE_PATH}: {e}")
+        print(f"[main] Error saving cache to {CACHE_FILE_PATH}: {e}")
 
 
 def update_cache_for_sources(sources: list[str], days_back: int = 7) -> None:
@@ -225,8 +229,8 @@ def main():
     parser.add_argument(
         "--sources",
         nargs="+",
-        default=["obsidian"],
-        help="Data sources to update (default: obsidian)",
+        default=["obsidian", "todoist", "instapaper", "calendar", "health"],
+        help="Data sources to update (default: all sources)",
     )
     parser.add_argument(
         "--api-num-days-back",
@@ -236,10 +240,7 @@ def main():
     )
     args = parser.parse_args()
     with CacheLock():
-        print(f"Updating cache for sources: {args.sources}")
-        print(
-            f"Todoist API will look back {args.api_num_days_back} days for completed tasks"
-        )
+        print(f"[main] Updating cache for sources: {args.sources}")
         update_cache_for_sources(args.sources, args.api_num_days_back)
 
 

@@ -12,8 +12,6 @@ logging.basicConfig(
 mcp = FastMCP("everything2prompt")
 
 
-
-
 @mcp.tool(description=get_query_help())
 async def get_query_result(query_string: str) -> str:
     """

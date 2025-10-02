@@ -36,29 +36,33 @@ Turn any data source into a prompt. A powerful tool that aggregates and searches
    ```
 
 2. **Install dependencies:**
-   
-   **Using Poetry (recommended):**
    ```bash
    poetry install
    ```
-   
-   **Using pip:**
+
+3. **Configure environment variables:**
    ```bash
-   pip install -r requirements.txt
+   cp env_template.txt .env
+   # Edit .env with your actual values
    ```
 
-3. **Configure your data sources:**
-   
-   You'll need to set up access to your data sources. The project expects:
-   - Obsidian vault path
-   - Todoist API token
-   - Instapaper credentials
-   - Calendar data
-   - Health data sources
-
-4. **Update your data cache:**
+4. **Test setup:**
    ```bash
-   ./update_cache.sh
+   poetry run python cache.py --sources obsidian
+   poetry run python query.py "tag:health"
+   ```
+
+5. **Set up automated cache updates:**
+   ```bash
+   crontab -e
+   # Add this line (replace with your actual project path):
+   */5 * * * * /path/to/everything2prompt/update_cache.sh
+   ```
+
+6. **Configure tag descriptions (MCP server):**
+   ```bash
+   cp tag_descriptions_template.json tag_descriptions.json
+   # Edit tag_descriptions.json with your actual tags
    ```
 
 ## 🎯 Usage
@@ -157,23 +161,6 @@ The MCP server automatically generates comprehensive help documentation that inc
 
 For detailed MCP setup instructions and troubleshooting, see [README_MCP.md](README_MCP.md).
 
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file with your API keys and configuration:
-
-```env
-TODOIST_API_TOKEN=your_todoist_token
-INSTAPAPER_USERNAME=your_username
-INSTAPAPER_PASSWORD=your_password
-OBSIDIAN_VAULT_PATH=/path/to/your/vault
-```
-
-### Data Sources Setup
-
-Each data source module (`obsidian.py`, `todoist.py`, etc.) contains specific configuration instructions. Check the individual files for setup details.
-
 ## 📁 Project Structure
 
 ```
@@ -202,44 +189,6 @@ The system uses intelligent caching to improve performance:
 - Use `./update_cache.sh` to refresh your data
 - Cache is automatically managed and updated
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Import errors**: Ensure all dependencies are installed
-2. **Cache not found**: Run `./update_cache.sh` to populate cache
-3. **API errors**: Check your API keys and credentials
-4. **Permission errors**: Verify file permissions
-
-### Debug Mode
-
-Enable debug logging by modifying the logging level in `server.py` or `query.py`.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)
-- Integrates with Claude for Desktop
-- Uses Poetry for dependency management
-
-## 📞 Support
-
-For issues and questions:
-- Check the troubleshooting section
-- Review the MCP documentation in `README_MCP.md`
-- Open an issue on the repository
-
----
-
-**Turn your scattered data into actionable insights with Everything2Prompt!** 

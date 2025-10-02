@@ -209,3 +209,4 @@ __marimo__/
 # e2p
 cache.json
 cache.lock
+tag_descriptions.json

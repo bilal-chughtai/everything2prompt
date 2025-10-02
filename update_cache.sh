@@ -3,8 +3,20 @@
 # Comprehensive cache update script for everything2prompt
 # This script handles all data sources with their respective update frequencies
 
-cd /Users/bilal/Code/everything2prompt
-source .venv/bin/activate
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to the script directory
+cd "$SCRIPT_DIR"
+
+# Use virtual environment if it exists, otherwise warn
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+elif [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+else
+    echo "Warning: No virtual environment found. Make sure dependencies are installed globally or activate manually."
+fi
 
 # Get current timestamp for frequency checking
 CURRENT_TIME=$(date +%s)

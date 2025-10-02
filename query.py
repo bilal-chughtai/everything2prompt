@@ -22,6 +22,7 @@ import functools
 
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
+CURRENT DATE: {{ current_datetime }}
 {% if obsidian_output %}
 *** OBSIDIAN NOTES ***
 {{ obsidian_output }}
@@ -371,8 +372,9 @@ Do NOT write queries without parameters.
 - Items without dates appear at the end of results
 - Parameters are necessary. e.g. query "birthday" is invalid.
 
-## Data Sources Description
-- **Obsidian**: Your personal notes and knowledge base
+## Data Sources
+
+- **Obsidian**: Personal notes and knowledge base
 - **Todoist**: Task management and to-do items
 - **Instapaper**: Saved articles and reading list
 - **Calendar**: Scheduled events and appointments
@@ -429,6 +431,7 @@ def run(query_string: str) -> str:
         instapaper_output=instapaper_output,
         calendar_output=calendar_output,
         health_output=health_output,
+        current_datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
 
     return prompt

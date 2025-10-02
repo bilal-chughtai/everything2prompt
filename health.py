@@ -4,9 +4,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 from jinja2 import Template
+from dotenv import load_dotenv
 from models import HealthNode
 
-HEALTH_CSV_PATH = "/Users/bilal/code/health_dashboard/data/health_data.csv"
+# Load environment variables
+load_dotenv()
+
+# Get health CSV path from environment variable
+HEALTH_CSV_PATH = os.getenv("HEALTH_CSV_PATH")
 
 HEALTH_PROMPT_TEMPLATE = """{% for entry in entries %}---
 Date: {{ entry.date.strftime('%Y-%m-%d') }}{% for key, value in entry.health_metrics.items() %}

@@ -1,0 +1,24 @@
+# Everything2Prompt Environment Configuration Template
+# Copy this file to .env and fill in your actual values
+# cp env_template.txt .env
+
+# Data source paths
+OBSIDIAN_PATH=/path/to/your/obsidian/vault
+HEALTH_CSV_PATH=/path/to/your/health/data/health_data.csv
+CACHE_FILE_PATH=cache.json
+LOCK_FILE_PATH=cache.lock
+
+# API credentials
+TODOIST_ACCESS_TOKEN=your_todoist_access_token_here
+TODOIST_CLIENT_ID=your_todoist_client_id_here
+TODOIST_CLIENT_SECRET=your_todoist_client_secret_here
+
+INSTAPAPER_CONSUMER_KEY=your_instapaper_consumer_key_here
+INSTAPAPER_CONSUMER_SECRET=your_instapaper_consumer_secret_here
+INSTAPAPER_ACCESS_TOKEN=your_instapaper_access_token_here
+INSTAPAPER_ACCESS_TOKEN_SECRET=your_instapaper_access_token_secret_here
+
+# Calendar URLs
+CALENDAR_WORK=https://calendar.google.com/calendar/ical/your-work-calendar/basic.ics
+CALENDAR_PERSONAL=https://calendar.google.com/calendar/ical/your-personal-calendar/basic.ics
+CALENDAR_FAMILY=https://calendar.google.com/calendar/ical/family-calendar/basic.ics

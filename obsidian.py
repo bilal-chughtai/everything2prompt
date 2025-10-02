@@ -5,9 +5,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Tuple
 from jinja2 import Template
+from dotenv import load_dotenv
 from models import ObsidianNode
 
-OBSIDIAN_PATH = "/Users/bilal/obsidian/bilal-obsidian"
+# Load environment variables
+load_dotenv()
+
+# Get Obsidian path from environment variable
+OBSIDIAN_PATH = os.getenv("OBSIDIAN_PATH")
 
 # Jinja template for formatting Obsidian notes
 OBSIDIAN_PROMPT_TEMPLATE = """{% for note in notes %}

@@ -142,71 +142,12 @@ def get_all_projects(api: TodoistAPI) -> list[TodoistProject]:
         return []
 
 
-def update_tasks(
-    existing_tasks: list[TodoistNode], new_tasks: list[TodoistNode]
-) -> list[TodoistNode]:
-    """
-    Update existing tasks with new tasks, overwriting tasks with shared task IDs.
-
-    Args:
-        existing_tasks: List of existing TodoistNode tasks
-        new_tasks: List of new TodoistNode tasks from API
-
-    Returns:
-        Updated list of tasks with new tasks overwriting existing ones with same IDs
-    """
-    # Create a dictionary of existing tasks by task_id for quick lookup
-    existing_tasks_dict = {task.task_id: task for task in existing_tasks}
-
-    # Update with new tasks, overwriting existing ones with same task_id
-    for new_task in new_tasks:
-        existing_tasks_dict[new_task.task_id] = new_task
-
-    # Convert back to list
-    updated_tasks = list(existing_tasks_dict.values())
-
-    print(
-        f"Updated tasks: {len(existing_tasks)} existing + {len(new_tasks)} new = {len(updated_tasks)} total"
-    )
-    return updated_tasks
-
-
-def update_projects(
-    existing_projects: list[TodoistProject], new_projects: list[TodoistProject]
-) -> list[TodoistProject]:
-    """
-    Update existing projects with new projects, overwriting projects with shared project IDs.
-
-    Args:
-        existing_projects: List of existing TodoistProject projects
-        new_projects: List of new TodoistProject projects from API
-
-    Returns:
-        Updated list of projects with new projects overwriting existing ones with same IDs
-    """
-    # Create a dictionary of existing projects by project_id for quick lookup
-    existing_projects_dict = {
-        project.project_id: project for project in existing_projects
-    }
-
-    # Update with new projects, overwriting existing ones with same project_id
-    for new_project in new_projects:
-        existing_projects_dict[new_project.project_id] = new_project
-
-    # Convert back to list
-    updated_projects = list(existing_projects_dict.values())
-
-    print(
-        f"Updated projects: {len(existing_projects)} existing + {len(new_projects)} new = {len(updated_projects)} total"
-    )
-    return updated_projects
-
-
 def get_all_todoist_data(
     days_back: int = 7,
 ) -> Tuple[list[TodoistNode], list[TodoistNode], list[TodoistProject]]:
     """
     Get all Todoist data: active tasks, completed tasks from past N days, and all projects.
+    This fetches fresh data from the API, overwriting any existing/local data.
 
     Args:
         days_back: Number of days to look back for completed tasks (default: 7)
