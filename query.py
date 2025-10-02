@@ -22,7 +22,6 @@ import functools
 
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
-CURRENT DATE: {{ current_datetime }}
 {% if obsidian_output %}
 *** OBSIDIAN NOTES ***
 {{ obsidian_output }}
@@ -431,7 +430,6 @@ def run(query_string: str) -> str:
         instapaper_output=instapaper_output,
         calendar_output=calendar_output,
         health_output=health_output,
-        current_datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
 
     return prompt

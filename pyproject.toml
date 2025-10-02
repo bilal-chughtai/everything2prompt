@@ -11,7 +11,7 @@ pyyaml = "^6.0.2"
 pydantic = "^2.11.7"
 jinja2 = "^3.1.6"
 todoist-api-python = "^3.1.0"
-python-dotenv = "^0.9.9"
+python-dotenv = "^1.0.0"
 icalendar = "^6.3.1"
 requests = "^2.31.0"
 mcp = {extras = ["cli"], version = "^1.2.0"}
