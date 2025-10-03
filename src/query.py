@@ -9,7 +9,6 @@ from src.models import (
     InstapaperNode,
     CalendarNode,
     HealthNode,
-    Cache,
 )
 from src.sources.obsidian import create_obsidian_prompt
 from src.sources.todoist import create_todoist_prompt
@@ -19,11 +18,60 @@ from src.sources.health import create_health_prompt
 from src.cache import load_cache
 from src.tag_descriptions import get_source_tag_descriptions
 from typing import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel, Field, field_validator
 from jinja2 import Template
 import re
 import functools
+
+
+def parse_relative_date(date_str: str) -> datetime:
+    """
+    Parse relative date strings like '-7d', '-1m', '+1m', '-1y', 'now' into datetime objects.
+    
+    Supported formats:
+    - now: current date/time
+    - -7d: 7 days ago
+    - +1m: 1 month from now  
+    - -1y: 1 year ago
+    - +2w: 2 weeks from now
+    
+    Returns datetime object representing the calculated date.
+    """
+    if not date_str:
+        raise ValueError("Empty date string")
+    
+    # Handle special case: "now"
+    if date_str.lower() == 'now':
+        return datetime.now()
+    
+    # Match pattern: optional +/- sign, number, unit (d/w/m/y)
+    pattern = r'^([+-]?)(\d+)([dwmy])$'
+    match = re.match(pattern, date_str.lower())
+    
+    if not match:
+        raise ValueError(f"Invalid relative date format: {date_str}. Expected format like '-7d', '+1m', '-1y', or 'now'")
+    
+    sign, number, unit = match.groups()
+    
+    # Convert sign to multiplier
+    multiplier = -1 if sign == '-' else 1
+    amount = int(number) * multiplier
+    
+    # Calculate the date based on unit
+    now = datetime.now()
+    
+    if unit == 'd':  # days
+        return now + timedelta(days=amount)
+    elif unit == 'w':  # weeks
+        return now + timedelta(weeks=amount)
+    elif unit == 'm':  # months (approximate as 30 days)
+        return now + timedelta(days=amount * 30)
+    elif unit == 'y':  # years (approximate as 365 days)
+        return now + timedelta(days=amount * 365)
+    else:
+        raise ValueError(f"Unsupported time unit: {unit}")
+
 
 # Jinja template for formatting all data sources together
 MASTER_PROMPT_TEMPLATE = """QUERY: "{{ query }}"
@@ -70,10 +118,18 @@ class Query(BaseModel):
     def parse_date(cls, v):
         if v is None or isinstance(v, datetime):
             return v
+        
+        # Try relative date format first (e.g., -7d, +1m, -1y)
+        try:
+            return parse_relative_date(v)
+        except ValueError:
+            pass
+        
+        # Try absolute date format (YYYY-MM-DD)
         try:
             return datetime.strptime(v, "%Y-%m-%d")
         except ValueError:
-            raise ValueError("Date must be in YYYY-MM-DD format")
+            raise ValueError(f"Date must be in YYYY-MM-DD format or relative format like '-7d', '+1m', '-1y', or 'now'. Got: {v}")
 
     @field_validator("to_date")
     @classmethod
@@ -272,6 +328,21 @@ source:source1,source2 tag:tag1,tag2 from:YYYY-MM-DD to:YYYY-MM-DD
 
 Meaning: "Find all nodes in the date range that are in (source1 or source 2) AND have either (tag1 or tag2)
 
+## Date Formats
+
+### Absolute Dates
+- **Format**: `YYYY-MM-DD`
+- **Examples**: `2025-01-01`, `2025-12-31`
+
+### Relative Dates  
+- **Format**: `[+/-]N[unit]` where unit is d/w/m/y, or `now`
+- **Examples**:
+  - `now`: current date/time
+  - `-7d`: 7 days ago
+  - `+1m`: 1 month from now
+  - `-1y`: 1 year ago
+  - `+2w`: 2 weeks from now
+
 ## Available Sources
 {sources}
 
@@ -323,15 +394,21 @@ Filter by tags. Multiple tags can be specified with commas.
 
 ### from_date
 Filter items from a specific start date onwards.
-- **Format**: `from:YYYY-MM-DD`
+- **Format**: `from:YYYY-MM-DD` or `from:[+/-]N[unit]` or `from:now`
 - **Examples**:
   - `from:2025-01-01` - Find items from January 1, 2025 onwards
+  - `from:-7d` - Find items from 7 days ago onwards
+  - `from:-1m` - Find items from 1 month ago onwards
+  - `from:now` - Find items from now onwards
 
 ### to_date
 Filter items up to a specific end date.
-- **Format**: `to:YYYY-MM-DD`
+- **Format**: `to:YYYY-MM-DD` or `to:[+/-]N[unit]` or `to:now`
 - **Examples**:
   - `to:2025-12-31` - Find items up to December 31, 2025
+  - `to:+1m` - Find items up to 1 month from now
+  - `to:-1d` - Find items up to yesterday
+  - `to:now` - Find items up to now
 
 Do NOT write queries without parameters.
 
@@ -359,7 +436,17 @@ Do NOT write queries without parameters.
 
 5. **Find all items from the last month**:
    ```
-   from:2025-01-01 to:2025-01-31
+   from:-1m to:now
+   ```
+
+6. **Find work items from the last week**:
+   ```
+   tag:work from:-7d
+   ```
+
+7. **Find upcoming calendar events**:
+   ```
+   source:calendar from:now to:+1m
    ```
 
 ## Tips
